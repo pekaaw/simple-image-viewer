@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Biletsyning</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: black;
+                overflow: hidden;
+            }
+            main {
+                max-width: 100vw;
+                max-height: 100vw;
+                /* background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center center;
+                display: block;
+                position: relative;
+                left: 100vw;
+                transition: left 750ms ease-in; */
+            }
+            /* main.in {
+                left: 0vw;
+            } */
+            main section {
+                max-width: 100vw;
+                max-height: 100vw;
+                min-width: 100vw;
+                min-height: 100vh;
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center center;
+                background-color: transparent;
+                display: block;
+                position: absolute;
+                opacity: 0;
+                transition: opacity 0.75s ease-in-out;
+            }
+            main section.show {
+                opacity: 1;
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <section class="image"></section>
+            <section class="image"></section>
+        </main>
+        <img id="image-loader" style="display: none;">
+        <script src="images.js"></script>
+        <script>
+            (function showImages() {
+                try { console.log(images); }
+                catch { return requestAnimationFrame(showImages); }
+
+                const imageLoader = document.getElementById('image-loader');
+                const canvases = [...document.getElementsByClassName("image")];
+                let currentCanvasIndex = 0;
+                let otherCanvasIndex = () => (currentCanvasIndex + 1) % canvases.length;
+
+                const imageCollections = [[],[]];
+                let currentImageCollection = 0;
+                for (var i = 0; i < images.length; i++) {
+                    imageCollections[currentImageCollection].push(images[i]);
+                }
+
+                async function setImage() {
+                    const imageCollection = imageCollections[currentImageCollection];
+                    const imageCollectionSize = imageCollection.length;
+
+                    // choose new image in current image collection by random
+                    let imageIndex = Math.floor(Math.random() * imageCollectionSize);
+                    imageIndex = Math.min(imageCollectionSize - 1, imageIndex); // edge case when random returns 1
+
+                    // next image path
+                    const imagePath = imageCollection[imageIndex];
+
+                    // Move from current collection to other collection;
+                    imageCollections[currentImageCollection].splice(imageIndex, 1); // remove 1;
+                    const otherImageCollection = (currentImageCollection + 1) % imageCollections.length;
+                    imageCollections[otherImageCollection].push(imagePath);
+
+                    const currentCanvas = canvases[currentCanvasIndex];
+                    const otherCanvas = canvases[otherCanvasIndex()];
+
+                    // Load image into browser
+                    await new Promise(resolve => {
+                        function finished() {
+                            imageLoader.removeEventListener('load', finished);
+                            resolve();
+                        }
+                        loadListener = imageLoader.addEventListener('load', finished);
+                        imageLoader.src = imagePath;
+                    });
+
+                    // show and hide images
+                    currentCanvas.style.backgroundImage = `url('${imagePath}')`;
+                    currentCanvas.classList.add('show');
+                    otherCanvas.classList.remove('show');
+
+                    // update currentImageCollection to always have a list with images
+                    if (imageCollection.length <= 0) {
+                        currentImageCollection = (currentImageCollection + 1) % imageCollections.length;
+                    }
+
+                    // change canvas to update next
+                    currentCanvasIndex = otherCanvasIndex();
+
+                    // Request next image
+                    setTimeout(setImage, 10000);
+                }
+                requestAnimationFrame(setImage);
+
+            })();
+        </script>
+    </body>
+</html>
